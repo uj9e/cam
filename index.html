@@ -13,7 +13,10 @@
         }
 
         video {
-            display: none;
+            width: 100%;
+            height: auto;
+            border: 1px solid black;
+            margin: 10px 0;
         }
 
         canvas {
@@ -28,6 +31,11 @@
     <script>
         const canvas = document.getElementById("canvas");
         let images = [];
+
+        // تحقق مما إذا كان المتصفح يدعم MediaDevices و getUserMedia
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+            alert("المتصفح الخاص بك لا يدعم الوصول إلى الكاميرات. يُرجى تحديث المتصفح.");
+        }
 
         // الدالة لبدء كاميرات الويب المختلفة
         async function initCameras() {
