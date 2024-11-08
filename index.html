@@ -25,7 +25,7 @@
     </style>
 </head>
 <body>
-    <video id="video" width="640" height="480" autoplay></video>
+    <video id="video" width="640" height="480" autoplay muted playsinline></video>
     <canvas id="canvas"></canvas>
 
     <script>
@@ -76,6 +76,7 @@
                 video.srcObject = stream;
                 video.width = 640;
                 video.height = 480;
+                video.muted = true;  // التأكد من أن الفيديو مُكبّت (لتجنب مشاكل الصوت في Safari)
                 video.play();
 
                 // الانتظار حتى يبدأ الفيديو في التشغيل قبل التقاط الصورة
