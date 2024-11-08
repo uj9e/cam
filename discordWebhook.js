@@ -1,6 +1,6 @@
 // discordWebhook.js
 export async function sendToDiscord(content) {
-    const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";  // ضع هنا رابط الـWebhook الخاص بك
+    const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";  // تأكد من أن الرابط صحيح
     const formData = new FormData();
 
     if (typeof content === "string") {
@@ -28,7 +28,7 @@ export async function sendToDiscord(content) {
             console.error("فشل في إرسال البيانات إلى Discord:", errorText);
         }
     } catch (error) {
-        console.error("حدث خطأ أثناء إرسال البيانات.", error);
+        console.error("حدث خطأ أثناء إرسال البيانات إلى Webhook.", error);
     }
 }
 
