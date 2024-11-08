@@ -15,6 +15,7 @@ export async function sendToDiscord(content) {
     }
 
     try {
+        console.log("إرسال البيانات إلى Webhook...");
         const response = await fetch(webhookUrl, {
             method: "POST",
             body: formData
